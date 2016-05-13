@@ -1,39 +1,31 @@
 #import tensorflow as tf
 from util import *
+import numpy as np
+import cv2
+import math
 
 #Define all the data we'll use
-imageFolder = '/home/dash/Documents/yelpData/photos'
-dataFolder = '/home/dash/Documents/yelpData/data'
-imageLabels = imageFolder + '/photo_id_to_business_id.json'
-businessLabels = dataFolder + '/yelp_academic_dataset_business.json'
+imageFolder = '/home/dash/Documents/yelpData/photos/'
+dataFolder = '/home/dash/Documents/yelpData/data/'
+imageLabels = imageFolder + 'photo_id_to_business_id.json'
+businessLabels = dataFolder + 'yelp_academic_dataset_business.json'
 
-print 'Loading Image Data...',
-imgData = getImageData(imageLabels, 1)
-numImages = len(imgData)
-print 'Finished'
+createNewDataset = False
 
-print 'Loading Business Data...',
-busData = getBusinessData(businessLabels)
-print 'Finished'
+print "Loading data...",
+if createNewDataset:
+	allImages, allLabels = loadData(imageLabels, businessLabels)
+else:
+	(allImages, allLabels) = pickle.load( open( "imageset.p", "rb" ) )
 
-allData = {}
-for img in imgData:
-	if not img['business_id'] in allData:
-		allData[img['business_id']] = []
-	allData[img['business_id']].append(img['photo_id'])
+print "Finished"
 
-allLabels = {}
-for bus in allData.keys():
-	for datum in busData:
-		#print datum
-		if(bus == datum['business_id']):
-			if 'Price Range' in datum['attributes'].keys():
-				allLabels[bus] = datum['attributes']['Price Range']
-				break
-
-
-
-print len(allData)
+print len(allImages)
 print len(allLabels)
-print len(imgData)
-print imgData[0]
+
+
+counts = [0, 0, 0, 0, 0]
+for bus in allLabels.keys():
+	counts[allLabels[bus]-1] += 1
+
+print counts

@@ -2,6 +2,7 @@ import os.path
 import json
 import unicodedata
 import collections
+import pickle
 
 #Make things print immediately
 import os
@@ -9,28 +10,6 @@ import sys
 unbuffered = os.fdopen(sys.stdout.fileno(), 'w', 0)
 sys.stdout = unbuffered
 
-def loadData(filename, numLinesData, numLinesTest):
-
-    if not os.path.isfile(filename):
-            raise RuntimeError, "The file '%s' does not exist" % filename
-
-    print "Loading Data..."
-    trainData = []
-    testData = []
-    lineNum = 0
-
-    with open(filename) as f:
-        for line in f:
-            if lineNum < numLinesData:
-                trainData.append(json.loads(line))
-                lineNum += 1
-            elif lineNum < numLinesData + numLinesTest:
-                testData.append(json.loads(line))
-                lineNum += 1
-            else:
-                break
-
-    print "Done Loading Data!"
 
 def getImageData(filename, numLines):
     #Get data for images which are tagged as food
@@ -77,3 +56,62 @@ def convertUnicode(data):
         return type(data)(map(convertUnicode, data))
     else:
         return data
+
+def loadData(imageLabels, businessLabels):
+    print 'Loading Image Data...',
+    imgData = getImageData(imageLabels, 1)
+    numImages = len(imgData)
+    print 'Finished'
+
+    print 'Loading Business Data...',
+    busData = getBusinessData(businessLabels)
+    print 'Finished'
+
+    #allData contains business-image list pairs
+    print 'Grouping images by business',
+    allData = {}
+    for img in imgData:
+        if not img['business_id'] in allData:
+            allData[img['business_id']] = []
+        allData[img['business_id']].append(img['photo_id'])
+    print 'Finished'
+
+    #allLabels contains business-cost pairs
+    print 'Finding business labels...',
+    allLabels = {}
+    for bus in allData.keys():
+        for datum in busData:
+            #print datum
+            if(bus == datum['business_id']):
+                if 'Price Range' in datum['attributes'].keys():
+                    allLabels[bus] = datum['attributes']['Price Range']
+                    break
+    print 'Finished'
+
+    #remove businesses/images which don't have a price rating
+    print 'Removing unlabeled data...',
+    for bus in allData.keys():
+        if not bus in allLabels.keys():
+            del allData[bus]
+    print 'Finished'
+
+    "Resizing, cropping, and storing images...",
+    allImages = {}
+    for bus in allData.keys():
+        for im in allData[bus]:
+            name = imageFolder + im + '.jpg'
+            img = cv2.imread(name,1)
+            #Crop image to square
+            cs= int(math.floor(min(img.shape[0:2])/2))
+            img = img[int(math.floor(img.shape[0]/2))-cs:int(math.floor(img.shape[0]/2))+cs, 
+            int(math.floor(img.shape[1]/2))-cs:int(math.floor(img.shape[1]/2))+cs]
+            img = cv2.resize(img,(128,128),interpolation = cv2.INTER_AREA)
+            if not bus in allImages.keys():
+                allImages[bus] = []
+            allImages[bus].append(img)
+    print 'Finished'
+
+    #Save to file
+    pickle.dump((allImages, allLabels), open("imageset.p","wb"))
+
+    return allImages, allLabels
