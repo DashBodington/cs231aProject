@@ -3,6 +3,9 @@ import json
 import unicodedata
 import collections
 import pickle
+import numpy as np
+import cv2
+import math
 
 #Make things print immediately
 import os
@@ -57,7 +60,7 @@ def convertUnicode(data):
     else:
         return data
 
-def loadData(imageLabels, businessLabels):
+def loadData(imageLabels, businessLabels, imageFolder):
     print 'Loading Image Data...',
     imgData = getImageData(imageLabels, 1)
     numImages = len(imgData)
@@ -109,6 +112,9 @@ def loadData(imageLabels, businessLabels):
             if not bus in allImages.keys():
                 allImages[bus] = []
             allImages[bus].append(img)
+            cv2.imshow('img',img)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
     print 'Finished'
 
     #Save to file

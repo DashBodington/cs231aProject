@@ -3,6 +3,7 @@ from util import *
 import numpy as np
 import cv2
 import math
+import random
 
 #Define all the data we'll use
 imageFolder = '/home/dash/Documents/yelpData/photos/'
@@ -14,18 +15,33 @@ createNewDataset = False
 
 print "Loading data...",
 if createNewDataset:
-	allImages, allLabels = loadData(imageLabels, businessLabels)
+	allImages, allLabels = loadData(imageLabels, businessLabels, imageFolder)
 else:
 	(allImages, allLabels) = pickle.load( open( "imageset.p", "rb" ) )
 
-print "Finished"
+print "Finished loading", len(allImages), "businesses with", sum(len(ims) for ims in allImages.values()), "images."
 
-print len(allImages)
-print len(allLabels)
+#Bin data by price rating
+byPrice = {}
+for bus in allImages.keys():
+	if not allLabels[bus] in byPrice.keys():
+		byPrice[allLabels[bus]] = []
+	byPrice[allLabels[bus]].append(bus)
 
+#Shuffle businesses within their bins
+for cost in byPrice.values():
+	random.shuffle(cost)
 
-counts = [0, 0, 0, 0, 0]
-for bus in allLabels.keys():
-	counts[allLabels[bus]-1] += 1
+#Split businesses into train and test
+trainRatio = 0.9
+trainData = []
+testData = []
+for cost in byPrice.values():
+	for i in xrange(len(cost)):
+		if(i < trainRatio*len(cost)):
+			#Training set
+			trainData.append(bus)
+		else:
+			#Test set
+			testData.append(bus)
 
-print counts
