@@ -178,4 +178,8 @@ def createDatasets(allImages, allLabels, trainRatio):
     print len(trainLabels), "train images"
     print len(testLabels), "test images"
 
-    return (np.array(trainImages), trainLabels), (np.array(testImages), testLabels)
+    #Vectorize images
+    trainImages = np.reshape(np.array(trainImages),(len(trainImages),-1))
+    testImages = np.reshape(np.array(testImages),(len(testImages),-1))
+
+    return (trainImages, trainLabels), (testImages, testLabels)
