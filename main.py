@@ -22,5 +22,9 @@ print "Finished loading", len(allImages), "businesses with", sum(len(ims) for im
 
 trainData, testData = createDatasets(allImages, allLabels, 0.8)
 
-#
-perceptron(trainData,testData)
+#Learning methods
+#Perceptron
+#perceptron(trainData,testData)
+
+lenet(trainData, testData)
+
