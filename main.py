@@ -9,7 +9,7 @@ dataFolder = '/home/dash/Documents/yelpData/data/'
 imageLabels = imageFolder + 'photo_id_to_business_id.json'
 businessLabels = dataFolder + 'yelp_academic_dataset_business.json'
 
-createNewDataset = True
+createNewDataset = False
 
 print "Loading data..."
 if createNewDataset:
