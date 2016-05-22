@@ -6,6 +6,7 @@ import pickle
 import numpy as np
 import cv2
 import math
+import random
 
 #Make things print immediately
 import os
@@ -108,16 +109,73 @@ def loadData(imageLabels, businessLabels, imageFolder):
             cs= int(math.floor(min(img.shape[0:2])/2))
             img = img[int(math.floor(img.shape[0]/2))-cs:int(math.floor(img.shape[0]/2))+cs, 
             int(math.floor(img.shape[1]/2))-cs:int(math.floor(img.shape[1]/2))+cs]
-            img = cv2.resize(img,(128,128),interpolation = cv2.INTER_AREA)
+            img = cv2.resize(img,(64,64),interpolation = cv2.INTER_AREA)
             if not bus in allImages.keys():
                 allImages[bus] = []
             allImages[bus].append(img)
-            cv2.imshow('img',img)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
+            #cv2.imshow('img',img)
+            #cv2.waitKey(0)
+            #cv2.destroyAllWindows()
     print 'Finished'
 
     #Save to file
     pickle.dump((allImages, allLabels), open("imageset.p","wb"))
 
     return allImages, allLabels
+
+def createDatasets(allImages, allLabels, trainRatio):
+
+    #Bin data by price rating
+    byPrice = {}
+    for bus in allImages.keys():
+        if not allLabels[bus] in byPrice.keys():
+            byPrice[allLabels[bus]] = []
+        byPrice[allLabels[bus]].append(bus)
+
+    #Shuffle businesses within their bins
+    for cost in byPrice.values():
+        random.shuffle(cost)
+
+    #Split businesses into train and test
+    trainBus = []
+    testBus = []
+    for cost in byPrice.values():
+        for i in xrange(len(cost)):
+            if(i < trainRatio*len(cost)):
+                #Training set
+                trainBus.append(cost[i])
+            else:
+                #Test set
+                testBus.append(cost[i])
+
+    #Pack all the data into simpler vectors
+    trainImages = []
+    trainLabels = []
+    for bus in trainBus:
+        for im in allImages[bus]:
+            trainImages.append(im)
+            trainLabels.append(allLabels[bus])
+
+    testImages = []
+    testLabels = []
+    for bus in testBus:
+        #print len(allImages[bus])
+        for im in allImages[bus]:
+            testImages.append(im)
+            testLabels.append(allLabels[bus])
+
+    #Shuffle the training dataset
+    ti2 = []
+    tl2 = []
+    inds = range(1,len(trainLabels))
+    random.shuffle(inds)
+    for i in inds:
+        ti2.append(trainImages[i])
+        tl2.append(trainLabels[i])
+    trainImages = ti2
+    trainLabels = tl2
+
+    print len(trainLabels), "train images"
+    print len(testLabels), "test images"
+
+    return (np.array(trainImages), trainLabels), (np.array(testImages), testLabels)
