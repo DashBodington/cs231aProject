@@ -51,8 +51,8 @@ def lenet(trainData, testData):
 		return imOut, labelOut
 
 	#Machine learning
-	imSize = trainData[0].shape[0]
-	colors = trainData[0].shape[2]
+	imSize = 64
+	colors = 3
 
 	sess = tf.InteractiveSession()
 
@@ -105,7 +105,7 @@ def lenet(trainData, testData):
 
 	loss = tf.reduce_mean(tf.squared_difference(y,y_))
 
-	train_step = tf.train.AdamOptimizer(1e-3).minimize(loss)
+	train_step = tf.train.AdamOptimizer(1e-2).minimize(loss)
 	sess.run(tf.initialize_all_variables())
 
 	correct_prediction = tf.less(tf.abs(y-y_), 0.5)
