@@ -61,7 +61,7 @@ def convertUnicode(data):
     else:
         return data
 
-def loadData(imageLabels, businessLabels, imageFolder):
+def loadData(imageLabels, businessLabels, imageFolder, imsize = 227):
     print 'Loading Image Data...',
     imgData = getImageData(imageLabels, 1)
     numImages = len(imgData)
@@ -109,7 +109,7 @@ def loadData(imageLabels, businessLabels, imageFolder):
             cs= int(math.floor(min(img.shape[0:2])/2))
             img = img[int(math.floor(img.shape[0]/2))-cs:int(math.floor(img.shape[0]/2))+cs, 
             int(math.floor(img.shape[1]/2))-cs:int(math.floor(img.shape[1]/2))+cs]
-            img = cv2.resize(img,(64,64),interpolation = cv2.INTER_AREA)
+            img = cv2.resize(img,(imsize,imsize),interpolation = cv2.INTER_AREA)
             if not bus in allImages.keys():
                 allImages[bus] = []
             allImages[bus].append(img)
@@ -125,6 +125,12 @@ def loadData(imageLabels, businessLabels, imageFolder):
 
 def createDatasets(allImages, allLabels, trainRatio):
 
+    for bus in allLabels:
+        if allLabels[bus] >= 3:
+            allLabels[bus] = 1
+        else:
+            allLabels[bus]= 0
+
     #Bin data by price rating
     byPrice = {}
     for bus in allImages.keys():
@@ -136,12 +142,19 @@ def createDatasets(allImages, allLabels, trainRatio):
     for cost in byPrice.values():
         random.shuffle(cost)
 
+    #find min number to make sampling more uniform
+    minbus = 10e10
+    for cost in byPrice.values():
+        if(minbus > len(cost)):
+            minbus = len(cost)
+
+
     #Split businesses into train and test
     trainBus = []
     testBus = []
     for cost in byPrice.values():
-        for i in xrange(len(cost)):
-            if(i < trainRatio*len(cost)):
+        for i in xrange(minbus):
+            if(i < trainRatio*minbus):
                 #Training set
                 trainBus.append(cost[i])
             else:
@@ -181,5 +194,12 @@ def createDatasets(allImages, allLabels, trainRatio):
     #Vectorize images
     trainImages = np.reshape(np.array(trainImages),(len(trainImages),-1))
     testImages = np.reshape(np.array(testImages),(len(testImages),-1))
+
+
+    #im = trainImages[1]
+    #im = np.reshape(im, (128, 128, 3))
+    #cv2.imshow('image',im)
+    #cv2.waitKey()#
+
 
     return (trainImages, trainLabels), (testImages, testLabels)
