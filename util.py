@@ -123,7 +123,7 @@ def loadData(imageLabels, businessLabels, imageFolder, imsize = 227):
 
     return allImages, allLabels
 
-def createDatasets(allImages, allLabels, trainRatio):
+def createDatasets(allImages, allLabels, trainRatio, dataFraction):
 
     for bus in allLabels:
         if allLabels[bus] >= 3:
@@ -153,8 +153,8 @@ def createDatasets(allImages, allLabels, trainRatio):
     trainBus = []
     testBus = []
     for cost in byPrice.values():
-        for i in xrange(minbus):
-            if(i < trainRatio*minbus):
+        for i in xrange(int(len(cost)*dataFraction)):
+            if(i < trainRatio*len(cost)*dataFraction):
                 #Training set
                 trainBus.append(cost[i])
             else:

@@ -4,7 +4,7 @@ import numpy as np
 
 def perceptron(trainData, testData):
 
-	
+
 
 	def getBatch(data, batchSize):
 		inds = range(len(data[0]))
@@ -42,7 +42,7 @@ def perceptron(trainData, testData):
 	print "Accuracy: ", (sess.run(accuracy, feed_dict={x: testData[0], y_: testData[1]}))
 
 def perceptronOneHot(trainData, testData):
-
+	sess = tf.InteractiveSession()#
 
 	newLabels = []
 	#Make dataset one-hot
@@ -64,7 +64,7 @@ def perceptronOneHot(trainData, testData):
 			
 	testData = (testData[0], newLabels)
 
-
+	inLength = 1000
 
 	def getBatch(data, batchSize):
 		inds = range(len(data[0]))
@@ -79,31 +79,42 @@ def perceptronOneHot(trainData, testData):
 	#Machine learning
 	imSize = 128
 	colors = 3
-	x = tf.placeholder(tf.float32, [None, imSize*imSize*colors])
-	W = tf.Variable(tf.zeros([imSize*imSize*colors, 2]))
-	b = tf.Variable(tf.zeros([1]))
-	y = tf.matmul(x, W) + b
+	x = tf.placeholder(tf.float32, [None, inLength])
 	y_ = tf.placeholder(tf.float32, [None,2])
+	W = tf.Variable(tf.truncated_normal([inLength, 2], stddev=0.1))
+	b = tf.Variable(tf.truncated_normal([2]))
 
+	sess.run(tf.initialize_all_variables())
 
-	cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y), reduction_indices=[1]))
-
-
+	y = tf.nn.softmax(tf.matmul(x, W) + b)
+	
 	correct_prediction = tf.equal(tf.argmax(y,1), tf.argmax(y_,1))
+
+	cross_entropy= tf.reduce_mean(tf.mul(-tf.reduce_sum(y_*tf.log(y), reduction_indices=1),(1.1-tf.to_float(correct_prediction)))) # Cross entropy
+	#optimizer = tf.train.GradientDescentOptimizer(1e-2).minimize(cost) # Gradient Descent
+
+	#cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y), reduction_indices=[1]))
+	#cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(y, y_)) 
+
+	
 	accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
-	train_step = tf.train.AdamOptimizer(1e-1).minimize(cross_entropy)
+	train_step = tf.train.MomentumOptimizer(1e-3,0.8).minimize(cross_entropy)
 	init = tf.initialize_all_variables()
-	sess = tf.Session()
-	sess.run(init)
+	#sess = tf.Session()
+	#sess.run(init)
+	with tf.Session() as sess:
+		sess.run(init)
 
+		for i in range(40000):
+			batch_xs, batch_ys = getBatch(trainData,5536)
+			sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys})
+			if i % 500 == 0:
+				print i, "Train Accuracy: ", (sess.run(accuracy, feed_dict={x: trainData[0], y_: trainData[1]}))
+				print "Test Accuracy: ", (sess.run(accuracy, feed_dict={x: testData[0], y_: testData[1]}))
 
-	for i in range(1000):
-		batch_xs, batch_ys = getBatch(trainData,1000)
-		sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys})
-
-	print "Train Accuracy: ", (sess.run(accuracy, feed_dict={x: trainData[0], y_: trainData[1]}))
-	print "Test Accuracy: ", (sess.run(accuracy, feed_dict={x: testData[0], y_: testData[1]}))
+		print "Train Accuracy: ", (sess.run(accuracy, feed_dict={x: trainData[0], y_: trainData[1]}))
+		print "Test Accuracy: ", (sess.run(accuracy, feed_dict={x: testData[0], y_: testData[1]}))
 
 
 
@@ -130,7 +141,7 @@ def lenet(trainData, testData):
 
 	def max_pool_2x2(x):
 	  return tf.nn.max_pool(x, ksize=[1, 2, 2, 1],
-	                        strides=[1, 2, 2, 1], padding='SAME')
+							strides=[1, 2, 2, 1], padding='SAME')
 
 	def weight_variable(shape):
 	  initial = tf.truncated_normal(shape, stddev=0.1)
@@ -257,7 +268,7 @@ def lenetOneHot(trainData, testData):
 
 	def max_pool_2x2(x):
 	  return tf.nn.max_pool(x, ksize=[1, 2, 2, 1],
-	                        strides=[1, 2, 2, 1], padding='SAME')
+							strides=[1, 2, 2, 1], padding='SAME')
 
 	def weight_variable(shape):
 	  initial = tf.truncated_normal(shape, stddev=0.1)

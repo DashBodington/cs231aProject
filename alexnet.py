@@ -37,9 +37,10 @@ from caffe_classes import class_names
 
 
 
-def alexnet(i):
-
-	i = i - mean(i)
+def alexnet(i, verbose=False):
+	i = np.array(i)
+	for j in xrange(i.shape[0]):
+		i[j] = i[j] - mean(i[j])
 
 	net_data = load("bvlc_alexnet.npy").item()
 
@@ -63,7 +64,8 @@ def alexnet(i):
 
 
 
-	x = tf.Variable(i)
+	#x = tf.Variable(i)
+	x = tf.placeholder(tf.float32, shape=[1,227,227,3])
 
 	#conv1
 	#conv(11, 11, 96, 4, 4, padding='VALID', name='conv1')
@@ -145,7 +147,7 @@ def alexnet(i):
 	#fc(4096, name='fc6')
 	fc6W = tf.Variable(net_data["fc6"][0])
 	fc6b = tf.Variable(net_data["fc6"][1])
-	fc6 = tf.nn.relu_layer(tf.reshape(maxpool5, [1, int(prod(maxpool5.get_shape()[1:]))]), fc6W, fc6b)
+	fc6 = tf.nn.relu_layer(tf.reshape(maxpool5, [-1, int(prod(maxpool5.get_shape()[1:]))]), fc6W, fc6b)
 
 	#fc7
 	#fc(4096, name='fc7')
@@ -168,8 +170,17 @@ def alexnet(i):
 	sess = tf.Session()
 	sess.run(init)
 
-	output = sess.run(prob)
+	output = []
+	for j in xrange(i.shape[0]):
+		img = np.reshape(i[j],(227,227,3))
+		img = np.expand_dims(img,axis=0)
+		out = prob.eval(session=sess,feed_dict={x: img})
+		output.append(np.squeeze(out))
+		if(verbose):
+			inds = argsort(out)[0,:]
+			for k in range(5):
+			    print class_names[inds[-1-k]], out[0, inds[-1-k]]
 
-	inds = argsort(output)[0,:]
-	for i in range(5):
-	    print class_names[inds[-1-i]], output[0, inds[-1-i]]
+	
+
+	return output
