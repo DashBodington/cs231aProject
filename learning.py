@@ -263,7 +263,7 @@ def lenetOneHot(trainData, testData):
 		return imOut, labelOut
 
 	#Machine learning
-	imSize = 128
+	imSize = 64
 	colors = 3
 
 	sess = tf.InteractiveSession()
@@ -313,13 +313,12 @@ def lenetOneHot(trainData, testData):
 	W_fc2 = weight_variable([1024, 2])
 	b_fc2 = bias_variable([2])
 
-	y=tf.matmul(h_fc1_drop, W_fc2) + b_fc2
-
+	y=tf.nn.softmax(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
 
 	cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y), reduction_indices=[1]))
 	loss = tf.reduce_mean(tf.squared_difference(y,y_))
 
-	train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
+	train_step = tf.train.MomentumOptimizer(1e-2,0.8).minimize(cross_entropy)
 	sess.run(tf.initialize_all_variables())
 
 	correct_prediction = tf.equal(tf.argmax(y,1), tf.argmax(y_,1))
@@ -327,9 +326,23 @@ def lenetOneHot(trainData, testData):
 
 	#Train model
 	for i in range(1000):
-		batch_xs, batch_ys = getBatch(trainData,100)
+		batch_xs, batch_ys = getBatch(trainData,200)
 		sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys, keep_prob: 1.0})
+		if(i%100 == 0):
+			#Too much data to process training set at once
+			trainAcc = []
+			for i in range(1,len(trainData[1])-2,2):
+				trainAcc.append((sess.run(accuracy, feed_dict={x: trainData[0][i:i+1], y_: trainData[1][i:i+1], keep_prob: 1.0})))
 
+			#print testAcc
+			print "Train Accuracy: ", np.mean(trainAcc)
+			#Too much data to process test set at once
+			testAcc = []
+			for i in range(1,len(testData[1])-2,2):
+				testAcc.append((sess.run(accuracy, feed_dict={x: testData[0][i:i+1], y_: testData[1][i:i+1], keep_prob: 1.0})))
+
+			#print testAcc
+			print "Test Accuracy: ", np.mean(testAcc)
 
 
 	#Too much data to process training set at once
@@ -346,3 +359,7 @@ def lenetOneHot(trainData, testData):
 
 	#print testAcc
 	print "Test Accuracy: ", np.mean(testAcc)
+
+	testPred = []
+	for i in range(1,len(testData[1])):
+		testPred.append((sess.run(tf.argmax(y,1), feed_dict={x: np.expand_dims(testData[0][i],axis=0), y_: np.expand_dims(testData[1][i],axis=0), keep_prob: 1.0})))

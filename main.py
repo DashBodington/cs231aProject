@@ -13,67 +13,52 @@ dataFolder = '/home/dash/Documents/yelpData/data/'
 imageLabels = imageFolder + 'photo_id_to_business_id.json'
 businessLabels = dataFolder + 'yelp_academic_dataset_business.json'
 
+#Ensure a 50/50 class split in training and testing
+evenData = True
+#Perform classification with multiple algorithms
+classify = False
 
-createNewDataset = 3
+featureType = "Image"
+#featureType = "Alexnet"
+#featureType = "colorHistogram"
+
 
 #random.seed(0)
 
 print "Loading data..."
-if createNewDataset ==1:
-	allImages, allLabels = loadData(imageLabels, businessLabels, imageFolder, imsize=227)
-	trainData, testData = createDatasets(allImages, allLabels, trainRatio=0.7, dataFraction=1.0)
-	#pickle.dump(testData, open("testdataset.p","wb"))
-	#pickle.dump(trainData, open("traindataset.p","wb"))
-if createNewDataset ==2:
-	#(allImages, allLabels) = pickle.load( open( "imageset.p", "rb" ) )
-	#data = pickle.load( open( "dataset.p", "rb" ) )
-	#trainData = pickle.load(open("traindataset.p","rb"))
-	#testData = pickle.load(open("testdataset.p","rb"))
-	print len(trainData[1]), "train images"
-	print len(testData[1]), "test images"
+if featureType == "Image":
 
+	createNew = False
+	if(createNew):
+		allImages, allLabels = loadData(imageLabels, businessLabels, imageFolder, imsize=64)
+		trainData, testData = createDatasets(allImages, allLabels, trainRatio=0.7, dataFraction=1.0)
+		pickle.dump(testData, open("testdatasetimages64.p","wb"))
+		pickle.dump(trainData, open("traindatasetimages64.p","wb"))
+	#Load premade dataset
+	testData = pickle.load(open("testdatasetimages64.p","rb"))
+	trainData = pickle.load(open("traindatasetimages64.p","rb"))
 
-	train_x = zeros((1, 227,227,3)).astype(float32)
-	train_y = zeros((1, 1000))
-	xdim = train_x.shape[1:]
-	ydim = train_y.shape[1]
+elif featureType == "Alexnet":
 
-
-	img = np.reshape(trainData[0][425],(227,227,3))
-
-	x_dummy = (random.random((1,)+ xdim)/255.).astype(float32)
-	im = x_dummy.copy()
-	im[0,:,:,:] = (img).astype(float32)
-
-	trainFeats = []
-	testFeats = []
-
-	trainFeats = alexnet(trainData[0],verbose=False)
-
-	testFeats = alexnet(testData[0], verbose=False)
-
-	
-
-	trainData = (trainFeats,trainData[1])
-	testData = (testFeats,testData[1])
-
-
-	print len(trainFeats)
-	print len(testFeats)
-	print "Saving alex feats...",
-	pickle.dump(testData, open("testalexfeatsfc6.p","wb"))
-	pickle.dump(trainData, open("trainalexfeatsfc6.p","wb"))
-	print "Finished"
-elif createNewDataset ==3:
+	sparsify = False
 
 	testData = pickle.load(open("testalexfeatsfc8.p","rb"))
 	trainData = pickle.load(open("trainalexfeatsfc8.p","rb"))
 
-	tol = 0.01
-	for im in testData[0]:
-		im.real[abs(im) < tol] = 0.0
-	for im in trainData[0]:
-		im.real[abs(im) < tol] = 0.0
+	if(sparsify):
+		tol = 0.01
+		for im in testData[0]:
+			im.real[abs(im) < tol] = 0.0
+		for im in trainData[0]:
+			im.real[abs(im) < tol] = 0.0
+elif featureType == "colorHistogram":
+
+	testData = pickle.load(open("testdatasetimages64.p","rb"))
+	trainData = pickle.load(open("traindatasetimages64.p","rb"))
+	
+	testData = colorHist(testData)
+	trainData = colorHist(trainData)
+	
 
 
 #print "Finished loading", len(allImages), "businesses with", sum(len(ims) for ims in allImages.values()), "images."
@@ -84,18 +69,16 @@ elif createNewDataset ==3:
 #pickle.dump((trainData, testData), open("dataset.p","wb"))
 
 
-
+#print testData[0][0].shape
 #Learning methods
 #Perceptron
 #perceptronOneHot(trainData,testData)
 
-#lenetOneHot(trainData, testData)
-
 #print trainData[0].shape
 
-
-trainData = evenDataset(trainData)
-testData = evenDataset(testData)
+if(evenData):
+	trainData = evenDataset(trainData)
+	testData = evenDataset(testData)
 
 
 print len(trainData[1]), "Train cases:",
@@ -115,9 +98,13 @@ print (np.array(vals)/np.sum(vals))
 
 
 
-#perceptronOneHot(trainData,testData)
+
+#pred = lenetOneHot(trainData, testData)
+
 #Classifiers
-if(False):
+if(classify):
+
+	#perceptronOneHot(trainData,testData)
 
 	print "SVM",
 	#Scikit learn, svm

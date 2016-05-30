@@ -7,6 +7,7 @@ import numpy as np
 import cv2
 import math
 import random
+from alexnet import *
 
 #Make things print immediately
 import os
@@ -229,3 +230,50 @@ def evenDataset(data):
                 newLabels.append(data[1][i])
                 neg += 1
     return (newIms,newLabels)
+
+
+def createAlexnetFeats(trainData, testData):
+    #(allImages, allLabels) = pickle.load( open( "imageset.p", "rb" ) )
+    #data = pickle.load( open( "dataset.p", "rb" ) )
+    #trainData = pickle.load(open("traindataset.p","rb"))
+    #testData = pickle.load(open("testdataset.p","rb"))
+    print len(trainData[1]), "train images"
+    print len(testData[1]), "test images"
+
+
+    train_x = zeros((1, 227,227,3)).astype(float32)
+    train_y = zeros((1, 1000))
+    xdim = train_x.shape[1:]
+    ydim = train_y.shape[1]
+
+
+    img = np.reshape(trainData[0][425],(227,227,3))
+
+    x_dummy = (random.random((1,)+ xdim)/255.).astype(float32)
+    im = x_dummy.copy()
+    im[0,:,:,:] = (img).astype(float32)
+
+    trainFeats = []
+    testFeats = []
+
+    trainFeats = alexnet(trainData[0],verbose=False)
+
+    testFeats = alexnet(testData[0], verbose=False)
+
+    
+
+    trainData = (trainFeats,trainData[1])
+    testData = (testFeats,testData[1])
+
+
+    print len(trainFeats)
+    print len(testFeats)
+    print "Saving alex feats...",
+    pickle.dump(testData, open("testalexfeatsfc6.p","wb"))
+    pickle.dump(trainData, open("trainalexfeatsfc6.p","wb"))
+    print "Finished"
+
+
+def colorHist(inData):
+    imgs = inData[0]
+    labels = inData[1]
