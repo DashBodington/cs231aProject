@@ -18,9 +18,9 @@ evenData = True
 #Perform classification with multiple algorithms
 classify = False
 
-featureType = "Image"
+#featureType = "Image"
 #featureType = "Alexnet"
-#featureType = "colorHistogram"
+featureType = "colorHistogram"
 
 
 #random.seed(0)

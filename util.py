@@ -277,3 +277,14 @@ def createAlexnetFeats(trainData, testData):
 def colorHist(inData):
     imgs = inData[0]
     labels = inData[1]
+    newfeats = []
+    for im in imgs:
+        hist = np.zeros((1,30))
+        for i in xrange(im.shape[0]):
+            ibin = int(np.floor(float(pix[i])/255.0*10))
+            col = int(2.99*float(i)*float(im.shape[0])
+            hist[ibin + col*10]
+        hist = hist/np.mean(hist)
+        newfeats.append(hist)
+    return(newFeats,labels)
+
