@@ -203,3 +203,29 @@ def createDatasets(allImages, allLabels, trainRatio, dataFraction):
 
 
     return (trainImages, trainLabels), (testImages, testLabels)
+
+def evenDataset(data):
+    pos = 0
+    neg = 0
+    for i in xrange(len(data[1])):
+        if(data[1][i] == 1):
+            pos += 1
+        else:
+            neg += 1
+    num = min(pos, neg)
+    newIms = []
+    newLabels = []
+    pos = 0
+    neg = 0
+    for i in xrange(len(data[1])):
+        if(data[1][i] == 1):
+            if(pos < num):
+                newIms.append(data[0][i])
+                newLabels.append(data[1][i])
+                pos += 1
+        else:
+            if(neg < num):
+                newIms.append(data[0][i])
+                newLabels.append(data[1][i])
+                neg += 1
+    return (newIms,newLabels)

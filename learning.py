@@ -64,7 +64,7 @@ def perceptronOneHot(trainData, testData):
 			
 	testData = (testData[0], newLabels)
 
-	inLength = 1000
+	inLength = trainData[0][0].shape[0]
 
 	def getBatch(data, batchSize):
 		inds = range(len(data[0]))
@@ -90,7 +90,12 @@ def perceptronOneHot(trainData, testData):
 	
 	correct_prediction = tf.equal(tf.argmax(y,1), tf.argmax(y_,1))
 
-	cross_entropy= tf.reduce_mean(tf.mul(-tf.reduce_sum(y_*tf.log(y), reduction_indices=1),(1.1-tf.to_float(correct_prediction)))) # Cross entropy
+	#Cross entropy which only updates on incorrect predictions
+	cross_entropy= tf.reduce_mean(tf.mul(-tf.reduce_sum(y_*tf.log(y), reduction_indices=1),(1.5-tf.to_float(correct_prediction)))) # Cross entropy
+	
+	#Normal cross entropy
+	#cross_entropy= tf.reduce_mean(-tf.reduce_sum(y_*tf.log(y), reduction_indices=1)) # Cross entropy
+
 	#optimizer = tf.train.GradientDescentOptimizer(1e-2).minimize(cost) # Gradient Descent
 
 	#cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y), reduction_indices=[1]))
@@ -99,15 +104,15 @@ def perceptronOneHot(trainData, testData):
 	
 	accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
-	train_step = tf.train.MomentumOptimizer(1e-3,0.8).minimize(cross_entropy)
+	train_step = tf.train.MomentumOptimizer(1e-4,0.8).minimize(cross_entropy)
 	init = tf.initialize_all_variables()
 	#sess = tf.Session()
 	#sess.run(init)
 	with tf.Session() as sess:
 		sess.run(init)
 
-		for i in range(40000):
-			batch_xs, batch_ys = getBatch(trainData,5536)
+		for i in range(100000):
+			batch_xs, batch_ys = getBatch(trainData,200)
 			sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys})
 			if i % 500 == 0:
 				print i, "Train Accuracy: ", (sess.run(accuracy, feed_dict={x: trainData[0], y_: trainData[1]}))

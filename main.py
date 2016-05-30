@@ -3,12 +3,16 @@ from util import *
 from learning import *
 from alexnet import *
 from sklearn import svm
+from sklearn.naive_bayes import GaussianNB
+from sklearn import neighbors, datasets
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
 #Define all the data we'll use
 imageFolder = '/home/dash/Documents/yelpData/photos/'
 dataFolder = '/home/dash/Documents/yelpData/data/'
 imageLabels = imageFolder + 'photo_id_to_business_id.json'
 businessLabels = dataFolder + 'yelp_academic_dataset_business.json'
+
 
 createNewDataset = 3
 
@@ -17,14 +21,14 @@ createNewDataset = 3
 print "Loading data..."
 if createNewDataset ==1:
 	allImages, allLabels = loadData(imageLabels, businessLabels, imageFolder, imsize=227)
-	trainData, testData = createDatasets(allImages, allLabels, trainRatio=0.7, dataFraction=0.5)
-	pickle.dump(testData, open("testdataset.p","wb"))
-	pickle.dump(trainData, open("traindataset.p","wb"))
-elif createNewDataset ==2:
+	trainData, testData = createDatasets(allImages, allLabels, trainRatio=0.7, dataFraction=1.0)
+	#pickle.dump(testData, open("testdataset.p","wb"))
+	#pickle.dump(trainData, open("traindataset.p","wb"))
+if createNewDataset ==2:
 	#(allImages, allLabels) = pickle.load( open( "imageset.p", "rb" ) )
 	#data = pickle.load( open( "dataset.p", "rb" ) )
-	trainData = pickle.load(open("traindataset.p","rb"))
-	testData = pickle.load(open("testdataset.p","rb"))
+	#trainData = pickle.load(open("traindataset.p","rb"))
+	#testData = pickle.load(open("testdataset.p","rb"))
 	print len(trainData[1]), "train images"
 	print len(testData[1]), "test images"
 
@@ -48,18 +52,22 @@ elif createNewDataset ==2:
 
 	testFeats = alexnet(testData[0], verbose=False)
 
-	print len(trainFeats)
-	print len(testFeats)
+	
 
 	trainData = (trainFeats,trainData[1])
 	testData = (testFeats,testData[1])
 
-	pickle.dump(testData, open("testalexfeats.p","wb"))
-	pickle.dump(trainData, open("trainalexfeats.p","wb"))
+
+	print len(trainFeats)
+	print len(testFeats)
+	print "Saving alex feats...",
+	pickle.dump(testData, open("testalexfeatsfc6.p","wb"))
+	pickle.dump(trainData, open("trainalexfeatsfc6.p","wb"))
+	print "Finished"
 elif createNewDataset ==3:
 
-	testData = pickle.load(open("testalexfeats.p","rb"))
-	trainData = pickle.load(open("trainalexfeats.p","rb"))
+	testData = pickle.load(open("testalexfeatsfc8.p","rb"))
+	trainData = pickle.load(open("trainalexfeatsfc8.p","rb"))
 
 	tol = 0.01
 	for im in testData[0]:
@@ -84,16 +92,22 @@ elif createNewDataset ==3:
 #lenetOneHot(trainData, testData)
 
 #print trainData[0].shape
-print len(trainData[1])
-vals = [0.0, 0.0, 0.0, 0.0]
+
+
+trainData = evenDataset(trainData)
+testData = evenDataset(testData)
+
+
+print len(trainData[1]), "Train cases:",
+vals = [0.0, 0.0]
 for truth in trainData[1]:
 	vals[int(truth)] += 1.0
 
 print (np.array(vals)/np.sum(vals))
 
 #print testData[0].shape#
-print len(testData[1])
-vals = [0.0, 0.0, 0.0, 0.0]
+print len(testData[1]), "Test cases: ",
+vals = [0.0, 0.0]
 for truth in testData[1]:
 	vals[int(truth)] += 1.0
 
@@ -101,16 +115,39 @@ print (np.array(vals)/np.sum(vals))
 
 
 
-perceptronOneHot(trainData,testData)
-#
-#clf = svm.SVC()
-#clf.fit(trainData[0], trainData[1])  
-#
-#pred = clf.predict(testData[0])
-#
-#print np.mean(np.equal(testData[1],pred))
+#perceptronOneHot(trainData,testData)
+#Classifiers
+if(False):
 
-#print trainData[0][425].shape
+	print "SVM",
+	#Scikit learn, svm
+	clf = svm.SVC()
+	clf.fit(trainData[0], trainData[1])  
+	pred = clf.predict(testData[0])
+	print np.mean(np.equal(testData[1],pred))
+
+	print "Naive Bayes",
+	#Scikit learn, naive bayes
+	clf = GaussianNB()
+	clf.fit(trainData[0], trainData[1])  
+	pred = clf.predict(testData[0])
+	print np.mean(np.equal(testData[1],pred))
+
+	print "K Nearest Neighbor",
+	#K nearest neighbor
+	clf = neighbors.KNeighborsClassifier(20)
+	clf.fit(trainData[0], trainData[1])  
+	pred = clf.predict(testData[0])
+	print np.mean(np.equal(testData[1],pred))
+
+	print "LDA",
+	#K nearest neighbor
+	clf = LinearDiscriminantAnalysis(solver='lsqr', shrinkage='auto')
+	clf.fit(trainData[0], trainData[1])  
+	pred = clf.predict(testData[0])
+	print np.mean(np.equal(testData[1],pred))
+
+#print trainData[0][425].shape#
 #cv2.im#show('image',img)
 #cv2.waitKey(0)
 #cv2.destroyAllWindows()

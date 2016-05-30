@@ -174,7 +174,7 @@ def alexnet(i, verbose=False):
 	for j in xrange(i.shape[0]):
 		img = np.reshape(i[j],(227,227,3))
 		img = np.expand_dims(img,axis=0)
-		out = prob.eval(session=sess,feed_dict={x: img})
+		out = fc6.eval(session=sess,feed_dict={x: img})
 		output.append(np.squeeze(out))
 		if(verbose):
 			inds = argsort(out)[0,:]
