@@ -8,6 +8,7 @@ import cv2
 import math
 import random
 from alexnet import *
+from sklearn import neighbors, datasets
 from sklearn.cluster import MiniBatchKMeans, KMeans
 
 #Make things print immediately
@@ -207,6 +208,7 @@ def createDatasets(allImages, allLabels, trainRatio, dataFraction):
     return (trainImages, trainLabels), (testImages, testLabels)
 
 def evenDataset(data):
+    choseninds = []
     pos = 0
     neg = 0
     for i in xrange(len(data[1])):
@@ -225,12 +227,14 @@ def evenDataset(data):
                 newIms.append(data[0][i])
                 newLabels.append(data[1][i])
                 pos += 1
+                choseninds.append(i)
         else:
             if(neg < num):
                 newIms.append(data[0][i])
                 newLabels.append(data[1][i])
                 neg += 1
-    return (newIms,newLabels)
+                choseninds.append(i)
+    return (newIms,newLabels), choseninds
 
 
 def createAlexnetFeats(trainData, testData):
@@ -270,8 +274,8 @@ def createAlexnetFeats(trainData, testData):
     print len(trainFeats)
     print len(testFeats)
     print "Saving alex feats...",
-    pickle.dump(testData, open("testalexfeatsfc6.p","wb"))
-    pickle.dump(trainData, open("trainalexfeatsfc6.p","wb"))
+    pickle.dump(testData, open("testalexfeatsfc8.p","wb"))
+    pickle.dump(trainData, open("trainalexfeatsfc8.p","wb"))
     print "Finished"
 
 
@@ -292,33 +296,34 @@ def colorHist(inData):
         newFeats.append(ihist)
     return(newFeats,labels)
 
-def siftbow(trainData, means=10):
+def surfBow(trainData, means=10, maxfeats=50):
     print "Finding BOW...",
     surf = cv2.xfeatures2d.SURF_create()
     #First find bag of words
-    descriptors = np.zeros((len(trainData[0])*20,64))
+    descriptors = np.zeros((len(trainData[0])*maxfeats,64))
     #For every image
     currentpos = 0
     for i in xrange(len(trainData[0])):
         #Reshape it properly
         img = np.reshape(trainData[0][i],(64,64,3))
         (kp, des) = surf.detectAndCompute(img, None)
-        sz = min(des.shape[0],19)
-        #print sz, currentpos, des.shape[0], descriptors[currentpos:currentpos + sz,:].shape, des[0:sz,:].shape
-        #print descriptors.shape
-        descriptors[currentpos:(currentpos + sz),:] = des[0:sz,:]
-        currentpos += min(des.shape[0],19)
-        #print des.shape
+        if not des is None:
+            sz = min(des.shape[0],maxfeats-1)
+            #print sz, currentpos, des.shape[0], descriptors[currentpos:currentpos + sz,:].shape, des[0:sz,:].shape
+            #print descriptors.shape
+            descriptors[currentpos:(currentpos + sz),:] = des[0:sz,:]
+            currentpos += min(des.shape[0],maxfeats-1)
+            #print des.shape
     descriptors = descriptors[0:currentpos,:]
 
     k_means = KMeans(n_clusters=10, n_init=1)
-    print "Fit", descriptors.shape
+    print "Fit"
     k_means.fit(descriptors, y=None)
     bow = k_means.cluster_centers_
     print "Finished"
     return bow
 
-def bowFeats(data, bow):
+def bowSurfFeats(data, bow):
     clusternum = range(0,bow.shape[0])
     clf = neighbors.KNeighborsClassifier(1)
     surf = cv2.xfeatures2d.SURF_create()
@@ -326,11 +331,63 @@ def bowFeats(data, bow):
     labels = data[1]
     newFeats = []
     for im in data[0]:
+        img = np.reshape(im,(64,64,3))
         bowfeat = np.zeros(len(clusternum))
         kp, des = surf.detectAndCompute(img, None)
-        for i in xrange(des.shape[0]):
-            bowfeat[clf.predict(des[i])] += 1
-        bowfeat = bowfeat/np.sum(bowfeat)
+        if not des is None:
+            for i in xrange(des.shape[0]):
+                bowfeat[clf.predict(np.expand_dims(des[i], axis=0))] += 1
+            bowfeat = bowfeat/np.sum(bowfeat)
         newFeats.append(bowfeat)
 
-        return (newFeats, labels)
+        #print newFeats.shape
+
+    return (newFeats, labels)
+
+def siftBow(trainData, means=10, maxfeats=50):
+    print "Finding BOW...",
+    sift = cv2.xfeatures2d.SIFT_create()
+    #First find bag of words
+    descriptors = np.zeros((len(trainData[0])*maxfeats,128))
+    #For every image
+    currentpos = 0
+    for i in xrange(len(trainData[0])):
+        #Reshape it properly
+        img = np.reshape(trainData[0][i],(64,64,3))
+        (kp, des) = sift.detectAndCompute(img, None)
+        if not des is None:
+            sz = min(des.shape[0],maxfeats-1)
+            #print sz, currentpos, des.shape[0], descriptors[currentpos:currentpos + sz,:].shape, des[0:sz,:].shape
+            #print des.shape, sz
+            descriptors[currentpos:(currentpos + sz),:] = des[0:sz,:]
+            currentpos += min(des.shape[0],maxfeats-1)
+            #print des.shape
+    descriptors = descriptors[0:currentpos,:]
+
+    k_means = KMeans(n_clusters=10, n_init=1)
+    print "Fit"
+    k_means.fit(descriptors, y=None)
+    bow = k_means.cluster_centers_
+    print "Finished"
+    return bow
+
+def bowSiftFeats(data, bow):
+    clusternum = range(0,bow.shape[0])
+    clf = neighbors.KNeighborsClassifier(1)
+    sift = cv2.xfeatures2d.SIFT_create()
+    clf.fit(bow, clusternum)  
+    labels = data[1]
+    newFeats = []
+    for im in data[0]:
+        img = np.reshape(im,(64,64,3))
+        bowfeat = np.zeros(len(clusternum))
+        kp, des = sift.detectAndCompute(img, None)
+        if not des is None:
+            for i in xrange(des.shape[0]):
+                bowfeat[clf.predict(np.expand_dims(des[i], axis=0))] += 1
+            bowfeat = bowfeat/np.sum(bowfeat)
+        newFeats.append(bowfeat)
+
+        #print newFeats.shape
+
+    return (newFeats, labels)

@@ -28,7 +28,7 @@ import matplotlib.image as mpimg
 from scipy.ndimage import filters
 import urllib
 from numpy import random
-
+import cv2
 
 import tensorflow as tf
 
@@ -38,9 +38,7 @@ from caffe_classes import class_names
 
 
 def alexnet(i, verbose=False):
-	i = np.array(i)
-	for j in xrange(i.shape[0]):
-		i[j] = i[j] - mean(i[j])
+	
 
 	net_data = load("bvlc_alexnet.npy").item()
 
@@ -173,8 +171,11 @@ def alexnet(i, verbose=False):
 	output = []
 	for j in xrange(i.shape[0]):
 		img = np.reshape(i[j],(227,227,3))
+		#print ("images/"+str(j)+".jpg")
+		#cv2.imwrite( "images/"+str(j)+".jpg", img );
+		img = img - mean(img)
 		img = np.expand_dims(img,axis=0)
-		out = fc6.eval(session=sess,feed_dict={x: img})
+		out = fc8.eval(session=sess,feed_dict={x: img})
 		output.append(np.squeeze(out))
 		if(verbose):
 			inds = argsort(out)[0,:]

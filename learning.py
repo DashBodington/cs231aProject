@@ -91,10 +91,10 @@ def perceptronOneHot(trainData, testData):
 	correct_prediction = tf.equal(tf.argmax(y,1), tf.argmax(y_,1))
 
 	#Cross entropy which only updates on incorrect predictions
-	cross_entropy= tf.reduce_mean(tf.mul(-tf.reduce_sum(y_*tf.log(y), reduction_indices=1),(1.5-tf.to_float(correct_prediction)))) # Cross entropy
+	#cross_entropy= tf.reduce_mean(tf.mul(-tf.reduce_sum(y_*tf.log(y), reduction_indices=1),(1.5-tf.to_float(correct_prediction)))) # Cross entropy
 	
 	#Normal cross entropy
-	#cross_entropy= tf.reduce_mean(-tf.reduce_sum(y_*tf.log(y), reduction_indices=1)) # Cross entropy
+	cross_entropy= tf.reduce_mean(-tf.reduce_sum(y_*tf.log(y), reduction_indices=1)) # Cross entropy
 
 	#optimizer = tf.train.GradientDescentOptimizer(1e-2).minimize(cost) # Gradient Descent
 
@@ -111,7 +111,7 @@ def perceptronOneHot(trainData, testData):
 	with tf.Session() as sess:
 		sess.run(init)
 
-		for i in range(100000):
+		for i in range(50000):
 			batch_xs, batch_ys = getBatch(trainData,200)
 			sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys})
 			if i % 500 == 0:
@@ -121,7 +121,7 @@ def perceptronOneHot(trainData, testData):
 		print "Train Accuracy: ", (sess.run(accuracy, feed_dict={x: trainData[0], y_: trainData[1]}))
 		print "Test Accuracy: ", (sess.run(accuracy, feed_dict={x: testData[0], y_: testData[1]}))
 
-
+		return sess.run(y, feed_dict={x: testData[0], y_: testData[1]})
 
 
 def lenet(trainData, testData):
@@ -318,31 +318,38 @@ def lenetOneHot(trainData, testData):
 	cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y), reduction_indices=[1]))
 	loss = tf.reduce_mean(tf.squared_difference(y,y_))
 
-	train_step = tf.train.MomentumOptimizer(1e-2,0.8).minimize(cross_entropy)
+	train_step = tf.train.MomentumOptimizer(1e-4,0.8).minimize(cross_entropy)
 	sess.run(tf.initialize_all_variables())
 
 	correct_prediction = tf.equal(tf.argmax(y,1), tf.argmax(y_,1))
 	accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
-	#Train model
-	for i in range(1000):
-		batch_xs, batch_ys = getBatch(trainData,200)
-		sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys, keep_prob: 1.0})
-		if(i%100 == 0):
-			#Too much data to process training set at once
-			trainAcc = []
-			for i in range(1,len(trainData[1])-2,2):
-				trainAcc.append((sess.run(accuracy, feed_dict={x: trainData[0][i:i+1], y_: trainData[1][i:i+1], keep_prob: 1.0})))
+	init = tf.initialize_all_variables()
+	#sess = tf.Session()
+	#sess.run(init)
+	with tf.Session() as sess:
+		sess.run(init)
 
-			#print testAcc
-			print "Train Accuracy: ", np.mean(trainAcc)
-			#Too much data to process test set at once
-			testAcc = []
-			for i in range(1,len(testData[1])-2,2):
-				testAcc.append((sess.run(accuracy, feed_dict={x: testData[0][i:i+1], y_: testData[1][i:i+1], keep_prob: 1.0})))
 
-			#print testAcc
-			print "Test Accuracy: ", np.mean(testAcc)
+		#Train model
+		for i in range(1000):
+			batch_xs, batch_ys = getBatch(trainData,200)
+			sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys, keep_prob: 1.0})
+			if(i%100 == 0):
+				#Too much data to process training set at once
+				trainAcc = []
+				for i in range(1,len(trainData[1])-2,2):
+					trainAcc.append((sess.run(accuracy, feed_dict={x: trainData[0][i:i+1], y_: trainData[1][i:i+1], keep_prob: 1.0})))
+
+				#print testAcc
+				print "Train Accuracy: ", np.mean(trainAcc)
+				#Too much data to process test set at once
+				testAcc = []
+				for i in range(1,len(testData[1])-2,2):
+					testAcc.append((sess.run(accuracy, feed_dict={x: testData[0][i:i+1], y_: testData[1][i:i+1], keep_prob: 1.0})))
+
+				#print testAcc
+				print "Test Accuracy: ", np.mean(testAcc)
 
 
 	#Too much data to process training set at once
