@@ -16,11 +16,12 @@ businessLabels = dataFolder + 'yelp_academic_dataset_business.json'
 #Ensure a 50/50 class split in training and testing
 evenData = True
 #Perform classification with multiple algorithms
-classify = False
+classify = True
 
 #featureType = "Image"
 #featureType = "Alexnet"
-featureType = "colorHistogram"
+#featureType = "colorHistogram"
+featureType = "SIFTBOW"
 
 
 #random.seed(0)
@@ -53,14 +54,31 @@ elif featureType == "Alexnet":
 			im.real[abs(im) < tol] = 0.0
 elif featureType == "colorHistogram":
 
+	#testData = pickle.load(open("testdatasetimages64.p","rb"))
+	#trainData = pickle.load(open("traindatasetimages64.p","rb"))
+	#
+	#testData = colorHist(testData)
+	#trainData = colorHist(trainData)
+	#
+	#pickle.dump(testData, open("testdatasetcolorhist.p","wb"))
+	#pickle.dump(trainData, open("traindatasetcolorhist.p","wb"))
+
+	testData = pickle.load(open("testdatasetcolorhist.p","rb"))
+	trainData = pickle.load(open("traindatasetcolorhist.p","rb"))#
+
+elif featureType == "SIFTBOW":
 	testData = pickle.load(open("testdatasetimages64.p","rb"))
 	trainData = pickle.load(open("traindatasetimages64.p","rb"))
-	
-	testData = colorHist(testData)
-	trainData = colorHist(trainData)
-	
+	bow = siftbow(trainData,means=10)
+	print "Training feats"
+	trainData = bowFeats(trainData,bow)
+	print "Test Feats"
+	testData = bowFeats(testData,bow)
 
+	pickle.dump(testData, open("testdatasetsurfbow.p","wb"))
+	pickle.dump(trainData, open("traindatasetsurfbow.p","wb"))
 
+print "Finished."
 #print "Finished loading", len(allImages), "businesses with", sum(len(ims) for ims in allImages.values()), "images."
 
 #trainData, testData = createDatasets(allImages, allLabels, 0.7)
