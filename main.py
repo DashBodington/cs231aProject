@@ -220,7 +220,7 @@ if pcaFeats:
 
 
 #Fit the one-layer neural net. No longer a perceptron after modifications, but the name remains
-probs = perceptronOneHot(trainData,testData, extraIms)
+probs = perceptronOneHot2(trainData,testData, extraIms)
 
 if printTop:
 	rp1 = probs[:,0].argsort()[-5:][::-1]

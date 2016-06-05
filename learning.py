@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+import random
 
 
 def oneLayerRegressor(trainData, testData):
@@ -83,6 +84,18 @@ def perceptronOneHot(trainData, testData, extraImages=[]):
 
 		return imOut, labelOut, valIms, valTruth
 
+	#Shuffle data initially
+	inds = range(len(trainData[0]))
+	random.shuffle(inds)
+	#print inds
+	tr2 = []
+	tl2 = []
+	for ind in inds:
+		tr2.append(trainData[0][ind])
+		tl2.append(trainData[1][ind])
+	trainData = (tr2, tl2)
+
+
 	#Machine learning
 	imSize = 128
 	colors = 3
@@ -149,7 +162,6 @@ def perceptronOneHot2(trainData, testData, extraImages=[]):
 	trainData = (trainData[0], newLabels)
 	newLabels = []
 
-
 	for label in testData[1]:
 		if(label == 0):
 			newLabels.append(np.array([1, 0]))
@@ -178,7 +190,18 @@ def perceptronOneHot2(trainData, testData, extraImages=[]):
 
 		return imOut, labelOut, valIms, valTruth
 
-	hiddenSize = 10
+	#Shuffle data initially
+	inds = range(len(trainData[0]))
+	random.shuffle(inds)
+	#print inds
+	tr2 = []
+	tl2 = []
+	for ind in inds:
+		tr2.append(trainData[0][ind])
+		tl2.append(trainData[1][ind])
+	trainData = (tr2, tl2)
+
+	hiddenSize = 50
 
 	#Machine learning
 	imSize = 128
@@ -219,8 +242,8 @@ def perceptronOneHot2(trainData, testData, extraImages=[]):
 	with tf.Session() as sess:
 		sess.run(init)
 
-		for i in range(50000):
-			batch_xs, batch_ys, valX, valY = getBatch(trainData,200, 0.2)
+		for i in range(100000):
+			batch_xs, batch_ys, valX, valY = getBatch(trainData,500, 0.2)
 			sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys})
 			if i % 500 == 0:
 				print i, "Train Accuracy: ", (sess.run(accuracy, feed_dict={x: trainData[0], y_: trainData[1]}))
@@ -457,12 +480,12 @@ def lenetOneHot(trainData, testData):
 				#print testAcc
 				print "Train Accuracy: ", np.mean(trainAcc)
 				#Too much data to process test set at once
-				testAcc = []
-				for i in range(1,len(testData[1])-2,2):
-					testAcc.append((sess.run(accuracy, feed_dict={x: testData[0][i:i+1], y_: testData[1][i:i+1], keep_prob: 1.0})))
+		testAcc = []
+		for i in range(1,len(testData[1])-2,2):
+			testAcc.append((sess.run(accuracy, feed_dict={x: testData[0][i:i+1], y_: testData[1][i:i+1], keep_prob: 1.0})))
 
-				#print testAcc
-				print "Test Accuracy: ", np.mean(testAcc)
+		#print testAcc
+		print "Test Accuracy: ", np.mean(testAcc)
 
 
 	#Too much data to process training set at once
