@@ -287,6 +287,27 @@ def createAlexnetFeats(trainData, testData):
     print "Finished"
 
 
+def createAlexnetFeat(img):
+    #(allImages, allLabels) = pickle.load( open( "imageset.p", "rb" ) )
+    #data = pickle.load( open( "dataset.p", "rb" ) )
+    #trainData = pickle.load(open("traindataset.p","rb"))
+    #testData = pickle.load(open("testdataset.p","rb"))
+
+
+    train_x = zeros((1, 227,227,3)).astype(float32)
+    train_y = zeros((1, 1000))
+    xdim = train_x.shape[1:]
+    ydim = train_y.shape[1]
+
+    trainFeats = []
+    testFeats = []
+
+    Feats = alexnet(np.expand_dims(img,axis=0),verbose=False)
+
+
+    return Feats
+
+
 def colorHist(inData):
     imgs = inData[0]
     labels = inData[1]

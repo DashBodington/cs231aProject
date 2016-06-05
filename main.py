@@ -2,10 +2,10 @@
 from util import *
 from learning import *
 from alexnet import *
-from sklearn import svm
 from sklearn.naive_bayes import GaussianNB
-from sklearn import neighbors, datasets
+from sklearn import neighbors, datasets, svm
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.decomposition import PCA
 
 #Define all the data we'll use
 imageFolder = '/home/dash/Documents/yelpData/photos/'
@@ -17,11 +17,15 @@ businessLabels = dataFolder + 'yelp_academic_dataset_business.json'
 evenTest = True
 evenTrain = True
 #Perform classification with multiple algorithms
-classify = False
+classify = True
 #Do extra test with In-n-out and fancy spanish restaurant
-extraTest = True
+extraTest = False
 #Print top and bottom image numbers
 printTop = False
+#Perform dimensionality reduction of features using PCA to numComp components
+pcaFeats = True
+numComp = 100
+
 
 #featureType = "Image"
 featureType = "Alexnet"
@@ -149,8 +153,8 @@ print (np.array(vals)/np.sum(vals))
 
 extraIms = []
 if extraTest:
-	extraIms.append(prepImage(cv2.imread("inout.png",1)))
-	extraIms.append(prepImage(cv2.imread("fanciness.jpg",1)))
+	extraIms.append(createAlexnetFeat(prepImage(cv2.imread("hd.jpg",1))))
+	extraIms.append(createAlexnetFeat(prepImage(cv2.imread("fanciness.jpg",1))))
 	#cv2.imshow('image',extraIms[0])
 	#cv2.waitKey(0)
 	#cv2.destroyAllWindows()
@@ -159,7 +163,15 @@ if extraTest:
 	#cv2.destroyAllWindows()
 
 	#pred = lenetOneHot(trainData, testData)
-	probs = perceptronOneHot(trainData,testData, extraIms)
+if pcaFeats:
+	pca = PCA(n_components=numComp,whiten=True)
+	pca.fit(trainData[0])
+	trainData = (pca.transform(trainData[0]), trainData[1])
+	testData = (pca.transform(testData[0]), testData[1])
+
+
+#Fit the one-layer neural net. No longer a perceptron after modifications, but the name remains
+probs = perceptronOneHot(trainData,testData, extraIms)
 
 if printTop:
 	rp1 = probs[:,0].argsort()[-5:][::-1]

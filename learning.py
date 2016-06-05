@@ -66,15 +66,23 @@ def perceptronOneHot(trainData, testData, extraImages=[]):
 
 	inLength = trainData[0][0].shape[0]
 
-	def getBatch(data, batchSize):
-		inds = range(len(data[0]))
+	def getBatch(data, batchSize, valPortion=0.0):
+		inds = range(int(len(data[0])*(1.0-valPortion)))
 		inds = np.random.choice(inds, batchSize, replace=False)
 		imOut = []
 		labelOut = []
+		valIms = []
+		valTruth = []
 		for ind in inds:
 			imOut.append(data[0][ind])
 			labelOut.append(data[1][ind])
-		return imOut, labelOut
+
+		valInds = range(int(len(data[0])*(1.0-valPortion)),len(data[0]))
+		for ind in valInds:
+			valIms.append(data[0][ind])
+			valTruth.append(data[1][ind])
+
+		return imOut, labelOut, valIms, valTruth
 
 	#Machine learning
 	imSize = 128
@@ -112,11 +120,11 @@ def perceptronOneHot(trainData, testData, extraImages=[]):
 		sess.run(init)
 
 		for i in range(50000):
-			batch_xs, batch_ys = getBatch(trainData,200)
+			batch_xs, batch_ys, valX, valY = getBatch(trainData,200, 0.2)
 			sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys})
 			if i % 500 == 0:
 				print i, "Train Accuracy: ", (sess.run(accuracy, feed_dict={x: trainData[0], y_: trainData[1]}))
-				print "Test Accuracy: ", (sess.run(accuracy, feed_dict={x: testData[0], y_: testData[1]}))
+				print "Val Accuracy: ", (sess.run(accuracy, feed_dict={x: valX, y_: valY}))
 
 		print "Train Accuracy: ", (sess.run(accuracy, feed_dict={x: trainData[0], y_: trainData[1]}))
 		print "Test Accuracy: ", (sess.run(accuracy, feed_dict={x: testData[0], y_: testData[1]}))
@@ -258,7 +266,7 @@ def lenetOneHot(trainData, testData):
 
 	#print trainData[1]
 
-	def getBatch(data, batchSize):
+	def getBatch(data, batchSize, valPortion=0.0):
 		inds = range(len(data[0]))
 		inds = np.random.choice(inds, batchSize, replace=False)
 		imOut = []
@@ -266,7 +274,7 @@ def lenetOneHot(trainData, testData):
 		for ind in inds:
 			imOut.append(data[0][ind])
 			labelOut.append(data[1][ind])
-		return imOut, labelOut
+		return imOut, labelOut, valIms, valTruth
 
 	#Machine learning
 	imSize = 64
