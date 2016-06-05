@@ -169,7 +169,7 @@ def alexnet(i, verbose=False):
 	sess.run(init)
 
 	output = []
-	print i.shape
+	#print i.shape
 	for j in xrange(i.shape[0]):
 		img = np.reshape(i[j],(227,227,3))
 		#print ("images/"+str(j)+".jpg")

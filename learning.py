@@ -2,10 +2,8 @@ import tensorflow as tf
 import numpy as np
 
 
-def perceptron(trainData, testData):
-
-
-
+def oneLayerRegressor(trainData, testData):
+	#Initial regression one-layer network
 	def getBatch(data, batchSize):
 		inds = range(len(data[0]))
 		inds = np.random.choice(inds, batchSize, replace=False)
@@ -42,6 +40,7 @@ def perceptron(trainData, testData):
 	print "Accuracy: ", (sess.run(accuracy, feed_dict={x: testData[0], y_: testData[1]}))
 
 def perceptronOneHot(trainData, testData, extraImages=[]):
+	#Classification one-layer network. Significantly modified from perceptron
 	sess = tf.InteractiveSession()#
 
 	newLabels = []
@@ -98,6 +97,107 @@ def perceptronOneHot(trainData, testData, extraImages=[]):
 	
 	correct_prediction = tf.equal(tf.argmax(y,1), tf.argmax(y_,1))
 
+	#Cross entropy which weights correct/incorrect predictions differently
+	#cross_entropy= tf.reduce_mean(tf.mul(-tf.reduce_sum(y_*tf.log(y), reduction_indices=1),(1.5-tf.to_float(correct_prediction)))) # Cross entropy
+	
+	#Normal cross entropy
+	cross_entropy= tf.reduce_mean(-tf.reduce_sum(y_*tf.log(y), reduction_indices=1)) # Cross entropy
+
+	#optimizer = tf.train.GradientDescentOptimizer(1e-2).minimize(cost) # Gradient Descent
+
+	#cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y), reduction_indices=[1]))
+	#cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(y, y_)) 
+
+	
+	accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+
+	train_step = tf.train.MomentumOptimizer(1e-4,0.8).minimize(cross_entropy)
+	init = tf.initialize_all_variables()
+	#sess = tf.Session()
+	#sess.run(init)
+	with tf.Session() as sess:
+		sess.run(init)
+
+		for i in range(50000):
+			batch_xs, batch_ys, valX, valY = getBatch(trainData,200, 0.2)
+			sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys})
+			if i % 500 == 0:
+				print i, "Train Accuracy: ", (sess.run(accuracy, feed_dict={x: trainData[0], y_: trainData[1]}))
+				print "Val Accuracy: ", (sess.run(accuracy, feed_dict={x: valX, y_: valY}))
+
+		print "Train Accuracy: ", (sess.run(accuracy, feed_dict={x: trainData[0], y_: trainData[1]}))
+		print "Test Accuracy: ", (sess.run(accuracy, feed_dict={x: testData[0], y_: testData[1]}))
+
+		#For extra test images
+		for im in extraImages:
+			print sess.run(y, feed_dict={x: im})
+
+		return sess.run(y, feed_dict={x: testData[0], y_: testData[1]})
+
+def perceptronOneHot2(trainData, testData, extraImages=[]):
+	#Simple net with hidden layer, based on the above net
+	sess = tf.InteractiveSession()#
+
+	newLabels = []
+	#Make dataset one-hot
+	for label in trainData[1]:
+		if(label == 0):
+			newLabels.append(np.array([1, 0]))
+		else:
+			newLabels.append(np.array([0, 1]))
+
+	trainData = (trainData[0], newLabels)
+	newLabels = []
+
+
+	for label in testData[1]:
+		if(label == 0):
+			newLabels.append(np.array([1, 0]))
+		else:
+			newLabels.append(np.array([0, 1]))
+			
+	testData = (testData[0], newLabels)
+
+	inLength = trainData[0][0].shape[0]
+
+	def getBatch(data, batchSize, valPortion=0.0):
+		inds = range(int(len(data[0])*(1.0-valPortion)))
+		inds = np.random.choice(inds, batchSize, replace=False)
+		imOut = []
+		labelOut = []
+		valIms = []
+		valTruth = []
+		for ind in inds:
+			imOut.append(data[0][ind])
+			labelOut.append(data[1][ind])
+
+		valInds = range(int(len(data[0])*(1.0-valPortion)),len(data[0]))
+		for ind in valInds:
+			valIms.append(data[0][ind])
+			valTruth.append(data[1][ind])
+
+		return imOut, labelOut, valIms, valTruth
+
+	hiddenSize = 10
+
+	#Machine learning
+	imSize = 128
+	colors = 3
+	x = tf.placeholder(tf.float32, [None, inLength])
+	y_ = tf.placeholder(tf.float32, [None,2])
+	W1 = tf.Variable(tf.truncated_normal([inLength, hiddenSize], stddev=0.1))
+	b1 = tf.Variable(tf.truncated_normal([hiddenSize]))
+	W2 = tf.Variable(tf.truncated_normal([hiddenSize, 2], stddev=0.1))
+	b2 = tf.Variable(tf.truncated_normal([2]))
+
+	sess.run(tf.initialize_all_variables())
+
+	inter = tf.nn.relu(tf.matmul(x,W1) + b1)
+
+	y = tf.nn.softmax(tf.matmul(inter, W2) + b2)
+	
+	correct_prediction = tf.equal(tf.argmax(y,1), tf.argmax(y_,1))
+
 	#Cross entropy which only updates on incorrect predictions
 	#cross_entropy= tf.reduce_mean(tf.mul(-tf.reduce_sum(y_*tf.log(y), reduction_indices=1),(1.5-tf.to_float(correct_prediction)))) # Cross entropy
 	
@@ -136,9 +236,8 @@ def perceptronOneHot(trainData, testData, extraImages=[]):
 
 		return sess.run(y, feed_dict={x: testData[0], y_: testData[1]})
 
-
-
 def lenet(trainData, testData):
+	#Regression convnet, doesn't really train well
 	def getBatch(data, batchSize):
 		inds = range(len(data[0]))
 		inds = np.random.choice(inds, batchSize, replace=False)
@@ -242,7 +341,7 @@ def preprocessedLenet(trainData, testData):
 	lenet(trainData, testData)
 
 def lenetOneHot(trainData, testData):
-
+	#Classification convnet, doesn't really train well
 
 	newLabels = []
 	#Make dataset one-hot
