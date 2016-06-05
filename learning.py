@@ -41,7 +41,7 @@ def perceptron(trainData, testData):
 
 	print "Accuracy: ", (sess.run(accuracy, feed_dict={x: testData[0], y_: testData[1]}))
 
-def perceptronOneHot(trainData, testData):
+def perceptronOneHot(trainData, testData, extraImages=[]):
 	sess = tf.InteractiveSession()#
 
 	newLabels = []
@@ -121,7 +121,13 @@ def perceptronOneHot(trainData, testData):
 		print "Train Accuracy: ", (sess.run(accuracy, feed_dict={x: trainData[0], y_: trainData[1]}))
 		print "Test Accuracy: ", (sess.run(accuracy, feed_dict={x: testData[0], y_: testData[1]}))
 
+		#For extra test images
+		for im in extraImages:
+			print sess.run(y, feed_dict={x: im})
+
+
 		return sess.run(y, feed_dict={x: testData[0], y_: testData[1]})
+
 
 
 def lenet(trainData, testData):

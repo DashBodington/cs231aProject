@@ -14,15 +14,23 @@ imageLabels = imageFolder + 'photo_id_to_business_id.json'
 businessLabels = dataFolder + 'yelp_academic_dataset_business.json'
 
 #Ensure a 50/50 class split in training and testing
-evenData = True
+evenTest = True
+evenTrain = True
 #Perform classification with multiple algorithms
-classify = True
+classify = False
+#Do extra test with In-n-out and fancy spanish restaurant
+extraTest = True
+#Print top and bottom image numbers
+printTop = False
 
 #featureType = "Image"
 featureType = "Alexnet"
 #featureType = "colorHistogram"
 #featureType = "SURFBOW"
 #featureType = "SIFTBOW"
+
+
+
 
 #
 random.seed(0)
@@ -34,7 +42,7 @@ if featureType == "Image":
 	if(createNew):
 		allImages, allLabels = loadData(imageLabels, businessLabels, imageFolder, imsize=64)
 		trainData, testData = createDatasets(allImages, allLabels, trainRatio=0.7, dataFraction=1.0)
-		pickle.dump(testData, open("testdatasetimages64.p","wb"))
+		pickle.dump(testData, open("testdatasetimages64.p","wb"))#
 		pickle.dump(trainData, open("traindatasetimages64.p","wb"))
 	#Load premade dataset
 	testData = pickle.load(open("testdatasetimages64.p","rb"))
@@ -118,8 +126,9 @@ print "Finished."
 
 #print trainData[0].shape
 
-if(evenData):
+if evenTrain:
 	trainData, otherinds = evenDataset(trainData)
+if evenTest:
 	testData, choseninds = evenDataset(testData)
 
 
@@ -138,22 +147,31 @@ for truth in testData[1]:
 
 print (np.array(vals)/np.sum(vals))
 
+extraIms = []
+if extraTest:
+	extraIms.append(prepImage(cv2.imread("inout.png",1)))
+	extraIms.append(prepImage(cv2.imread("fanciness.jpg",1)))
+	#cv2.imshow('image',extraIms[0])
+	#cv2.waitKey(0)
+	#cv2.destroyAllWindows()
+	#cv2.imshow('image',extraIms[1])
+	#cv2.waitKey(0)
+	#cv2.destroyAllWindows()
 
+	#pred = lenetOneHot(trainData, testData)
+	probs = perceptronOneHot(trainData,testData, extraIms)
 
+if printTop:
+	rp1 = probs[:,0].argsort()[-5:][::-1]
+	rp2 = probs[:,0].argsort()[:5][::-1]
+	for i in rp1:
+		print choseninds[i]
 
-#pred = lenetOneHot(trainData, testData)
-probs = perceptronOneHot(trainData,testData)
-rp1 = probs[:,0].argsort()[-5:][::-1]
-rp2 = probs[:,0].argsort()[:5][::-1]
-for i in rp1:
-	print choseninds[i]
+	for i in rp2:
+		print choseninds[i]
 
-for i in rp2:
-	print choseninds[i]
 #Classifiers
 if(classify):
-
-	
 
 	print "SVM",
 	#Scikit learn, svm
@@ -187,3 +205,4 @@ if(classify):
 #cv2.im#show('image',img)
 #cv2.waitKey(0)
 #cv2.destroyAllWindows()
+

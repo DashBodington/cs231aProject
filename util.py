@@ -64,6 +64,14 @@ def convertUnicode(data):
     else:
         return data
 
+def prepImage(image, imsize=227):
+    cs= int(math.floor(min(image.shape[0:2])/2))
+    #print cs
+    image = image[int(math.floor(image.shape[0]/2))-cs:int(math.floor(image.shape[0]/2))+cs, 
+    int(math.floor(image.shape[1]/2))-cs:int(math.floor(image.shape[1]/2))+cs]
+    img = cv2.resize(image,(imsize,imsize),interpolation = cv2.INTER_AREA)
+    return img
+
 def loadData(imageLabels, businessLabels, imageFolder, imsize = 227):
     print 'Loading Image Data...',
     imgData = getImageData(imageLabels, 1)
