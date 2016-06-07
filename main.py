@@ -16,7 +16,7 @@ businessLabels = dataFolder + 'yelp_academic_dataset_business.json'
 
 #Ensure a 50/50 class split in training and testing
 evenTest = True
-evenTrain = True
+evenTrain = False
 #Perform classification with multiple algorithms
 OTBclassify = True
 #Do extra test with In-n-out and fancy spanish restaurant
